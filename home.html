@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>بوابة جامعة بني سويف الأهلية</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { cairo: ['Cairo', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Cairo', sans-serif; background: #050000; margin: 0; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #110000; }
+    ::-webkit-scrollbar-thumb { background: #7f1d1d; border-radius: 4px; }
+    .glow-text { text-shadow: 0 0 20px rgba(255,0,0,0.5); }
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.5; transform: translate(-50%,-50%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
+    }
+    .animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message-enter { animation: slideUp 0.3s ease-out; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // ===== Icons (simple SVG) =====
+    const Icon = ({ d, className = "w-6 h-6" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d={d} />
+      </svg>
+    );
+    const BookOpen = (p) => <Icon {...p} d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />;
+    const Bot = (p) => <Icon {...p} d="M12 8V4H8 M2 14h2 M20 14h2 M15 13v2 M9 13v2 M12 18v4 M8 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" />;
+    const Calendar = (p) => <Icon {...p} d="M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />;
+    const Search = (p) => <Icon {...p} d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M21 21l-4.3-4.3" />;
+    const ChevronRight = (p) => <Icon {...p} d="M9 18l6-6-6-6" />;
+    const Send = (p) => <Icon {...p} d="M22 2L11 13 M22 2l-7 20-4-9-9-4 20-7z" />;
+    const User = (p) => <Icon {...p} d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />;
+    const Clock = (p) => <Icon {...p} d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 6v6l4 2" />;
+    const MapPin = (p) => <Icon {...p} d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />;
+    const Users = (p) => <Icon {...p} d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" />;
+    const Eye = (p) => <Icon {...p} d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />;
+    const Download = (p) => <Icon {...p} d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3" />;
+    const Star = (p) => <Icon {...p} d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />;
+    const X = (p) => <Icon {...p} d="M18 6L6 18 M6 6l12 12" />;
+    const CheckCircle = (p) => <Icon {...p} d="M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3" />;
+
+    // ===== Data =====
+    const subjectsData = [
+      { id: 1, name: 'Communication Presentation', code: 'HU101', arabicName: 'العرض والتواصل' },
+      { id: 2, name: 'Scientific Thinking', code: 'HU102', arabicName: 'التفكير العلمي' },
+      { id: 3, name: 'Math 1', code: 'MA101', arabicName: 'رياضيات 1' },
+      { id: 4, name: 'Math 0', code: 'MA100', arabicName: 'رياضيات 0' },
+      { id: 5, name: 'English', code: 'EN101', arabicName: 'اللغة الإنجليزية' },
+      { id: 6, name: 'Electronics', code: 'EL101', arabicName: 'الإلكترونيات' },
+      { id: 7, name: 'Fundamentals of CS', code: 'CS101', arabicName: 'أساسيات علوم الحاسب' },
+      { id: 8, name: 'Human Rights', code: 'HU103', arabicName: 'حقوق الإنسان' },
+    ];
+
+    const allLecturesData = {
+      'CS101': [
+        {
+          id: 1, title: 'المحاضرة الأولى: Introduction (مقدمة)', doctor: 'د. محمد قايد', hasContent: true, duration: '45 دقيقة',
+          summaryAr: `أهلاً بك في عالم علوم الحاسب! 🚀\n\nالحاسب آلة ذكية: Input → Processing → Output → Storage\n\nليش بنعتمد عليه؟\n⚡ سريع جداً\n🎯 دقيق\n📚 تخزين ضخم\n\nالحاسوب = Hardware + Software`,
+          summaryEn: `Welcome to Computer Science! 🚀\n\nComputer: Input → Processing → Output → Storage\n\nWhy computers?\n⚡ Super Fast\n🎯 Accurate\n📚 Huge Storage\n\nComputer = Hardware + Software`
+        },
+        {
+          id: 2, title: 'المحاضرة الثانية: Number System (أنظمة الأعداد)', doctor: 'د. محمد قايد', hasContent: true, duration: '50 دقيقة',
+          summaryAr: `أنظمة الأعداد 🔢\n\nالعشري (Decimal): 0-9\nالثنائي (Binary): 0 و 1 (لغة الكمبيوتر)\nالثماني (Octal): 0-7\nالسادس عشر (Hex): 0-9 + A-F`,
+          summaryEn: `Number Systems 🔢\n\nDecimal: 0-9\nBinary: 0 and 1\nOctal: 0-7\nHexadecimal: 0-9 + A-F`
+        },
+        {
+          id: 3, title: 'المحاضرة الثالثة: Hardware (المكونات المادية)', doctor: 'د. محمد قايد', hasContent: true, duration: '55 دقيقة',
+          summaryAr: `Hardware 🖥️\n\n1. Input: كيبورد، ماوس\n2. CPU: المخ\n3. Output: شاشة، سماعات\n4. Memory: RAM (مؤقتة) + Hard Disk/SSD (دائم)`,
+          summaryEn: `Hardware 🖥️\n\n1. Input Devices\n2. CPU (Brain)\n3. Output Devices\n4. Memory: RAM + Storage`
+        },
+        {
+          id: 4, title: 'المحاضرة الرابعة: Software (البرمجيات)', doctor: 'د. محمد قايد', hasContent: true, duration: '50 دقيقة',
+          summaryAr: `Software 💻\n\n• برمجيات النظام: Windows, Linux\n• برمجيات التطبيقات: Word, Chrome\n• لغات البرمجة: Python, Java, C++`,
+          summaryEn: `Software 💻\n\n• System Software: OS\n• Application Software\n• Programming Languages`
+        },
+        {
+          id: 5, title: 'المحاضرة الخامسة: Networks (الشبكات)', doctor: 'د. محمد قايد', hasContent: true, duration: '50 دقيقة',
+          summaryAr: `الشبكات 🌐\n\nLAN / MAN / WAN\nRouter, Switch, Modem\nTCP/IP, HTTP, IP Address`,
+          summaryEn: `Networks 🌐\n\nLAN / MAN / WAN\nRouter, Switch, Modem\nTCP/IP, HTTP, IP Address`
+        },
+        {
+          id: 6, title: 'المحاضرة السادسة: Security (أمن المعلومات)', doctor: 'د. محمد قايد', hasContent: true, duration: '45 دقيقة',
+          summaryAr: `أمن المعلومات 🔒\n\nCIA: Confidentiality, Integrity, Availability\nنصائح: كلمات مرور قوية + 2FA + تحديثات`,
+          summaryEn: `Security 🔒\n\nCIA Triad\nTips: Strong passwords + 2FA + Updates`
+        },
+      ],
+      'MA101': [
+        { id: 1, title: 'المحاضرة الأولى: المقدمات والتفاضل', doctor: 'د. دعاء', hasContent: true, duration: '60 دقيقة',
+          summaryAr: `التفاضل 📐\n\nمشتقة x^n = n*x^(n-1)\nتطبيقات: سرعة، قيم عظمى وصغرى`,
+          summaryEn: `Differentiation 📐\n\nDerivative of x^n = n*x^(n-1)` },
+        { id: 2, title: 'المحاضرة الثانية: قواعد التفاضل المتقدمة', doctor: 'د. دعاء', hasContent: false, duration: '55 دقيقة', summaryAr: '', summaryEn: '' },
+      ],
+      'EL101': [
+        { id: 1, title: 'المحاضرة الأولى: مقدمة في الإلكترونيات', doctor: 'د. شريف', hasContent: true, duration: '50 دقيقة',
+          summaryAr: `الإلكترونيات ⚡\n\nمقاومة، مكثف، دايود، ترانزستور\nقانون أوم: V = I × R`,
+          summaryEn: `Electronics ⚡\n\nResistor, Capacitor, Diode, Transistor\nOhm's Law: V = I × R` },
+      ],
+      'HU102': [
+        { id: 1, title: 'المحاضرة الأولى: ما هو التفكير العلمي؟', doctor: 'د. حمادة محمود', hasContent: true, duration: '45 دقيقة',
+          summaryAr: `التفكير العلمي 🧠\n\nملاحظة → فرضية → تجربة → نتيجة\nموضوعي، قابل للاختبار، مبني على الدليل`,
+          summaryEn: `Scientific Thinking 🧠\n\nObserve → Hypothesize → Test → Conclude` },
+      ],
+      'default': [{ id: 1, title: 'جاري إضافة محاضرات هذه المادة...', doctor: 'غير محدد', hasContent: false, duration: '-', summaryAr: '', summaryEn: '' }]
+    };
+
+    const scheduleGroup1 = [
+      { day: 'الأحد', slots: [
+        { time: '09:30 AM', items: [{ subject: 'Comm Presentation', doctor: 'د. طه', hall: 'مدرج 3' }] },
+        { time: '11:30 AM', items: [{ subject: 'Section Math 0', doctor: 'م. محمد جاد', hall: 'مبنى G 211' }] },
+      ]},
+      { day: 'الإثنين', slots: [
+        { time: '09:00 AM', items: [{ subject: 'Scientific Thinking', doctor: 'د. حمادة محمود', hall: 'مدرج 4' }] },
+        { time: '11:00 AM', items: [{ subject: 'Human Rights', doctor: 'د. عادلي أبو هشيمة', hall: 'مدرج 1' }] },
+        { time: '01:00 PM', items: [{ subject: 'Fundamentals', doctor: 'د. محمد قايد', hall: 'مدرج 2' }] }
+      ]},
+      { day: 'الثلاثاء', slots: [
+        { time: '09:00 AM', items: [{ subject: 'Sec Math 1', doctor: 'م. أسماء', hall: 'D 301' }, { subject: 'Sec Math 1', doctor: 'م. رضا', hall: 'B 314' }] },
+        { time: '11:00 AM', items: [{ subject: 'Sec Electronics', doctor: 'م. سلمى', hall: 'H 203' }, { subject: 'Sec Fundamentals', doctor: 'م. هيام', hall: 'E 312' }] },
+      ]},
+      { day: 'الأربعاء', slots: [
+        { time: '09:00 AM', items: [{ subject: 'Math 1', doctor: 'د. دعاء', hall: 'مدرج 2' }] },
+        { time: '11:00 AM', items: [{ subject: 'English', doctor: 'د. شيماء', hall: 'مدرج 3' }] },
+        { time: '01:00 PM', items: [{ subject: 'Electronics', doctor: 'د. شريف', hall: 'مدرج 4' }] },
+        { time: '03:00 PM', items: [{ subject: 'Math 0', doctor: 'د. عبد المنعم', hall: 'قاعة 4' }] }
+      ]},
+    ];
+
+    const scheduleGroup2 = [
+      { day: 'الأحد', slots: [
+        { time: '09:30 AM', items: [{ subject: 'Comm Presentation', doctor: 'د. طه', hall: 'مدرج 3' }] },
+        { time: '11:30 AM', items: [{ subject: 'Section Math 0', doctor: 'م. محمد جاد', hall: 'G 211' }] },
+        { time: '01:00 PM', items: [{ subject: 'Math 1', doctor: 'د. محمد حسين', hall: 'C 309' }] }
+      ]},
+      { day: 'الإثنين', slots: [
+        { time: '09:00 AM', items: [{ subject: 'Scientific Thinking', doctor: 'د. حمادة محمود', hall: 'مدرج 4' }] },
+        { time: '11:00 AM', items: [{ subject: 'Human Rights', doctor: 'د. عادل أبو هشيمة', hall: 'مدرج 1' }] },
+        { time: '01:00 PM', items: [{ subject: 'Fundamentals', doctor: 'د. محمد قايد', hall: 'مدرج 2' }] }
+      ]},
+      { day: 'الثلاثاء', slots: [
+        { time: '09:00 AM', items: [{ subject: 'Sec Fundamentals', doctor: 'م. هيام', hall: 'E 312' }, { subject: 'Sec Electronics', doctor: 'م. سلمى', hall: 'H 203' }] },
+        { time: '11:00 AM', items: [{ subject: 'Sec Math 1', doctor: 'م. أسماء', hall: 'D 301' }, { subject: 'Sec Math 1', doctor: 'م. رضا', hall: 'B 314' }] },
+      ]},
+      { day: 'الأربعاء', slots: [
+        { time: '11:00 AM', items: [{ subject: 'English', doctor: 'د. شيماء', hall: 'مدرج 3' }] },
+        { time: '01:00 PM', items: [{ subject: 'Electronics', doctor: 'د. شريف', hall: 'مدرج 4' }] },
+        { time: '03:00 PM', items: [{ subject: 'Math 0', doctor: 'د. عبد المنعم', hall: 'قاعة 4' }] }
+      ]},
+    ];
+
+    const getTodayArabic = () => {
+      const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+      return days[new Date().getDay()];
+    };
+
+    // ===== App =====
+    function App() {
+      const [view, setView] = useState('home');
+      const [selectedSubject, setSelectedSubject] = useState(null);
+      const [selectedGroup, setSelectedGroup] = useState(null);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [toast, setToast] = useState('');
+      const [favorites, setFavorites] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('fav') || '[]'); } catch { return []; }
+      });
+      const [preview, setPreview] = useState({ open: false, title: '', content: '', lang: '', lecture: null });
+      const [chat, setChat] = useState([{
+        id: 1, sender: 'bot',
+        text: 'أهلاً بك! أنا المساعد الجامعي 🎓\nاسألني عن أي محاضرة وسأشرحها لك.\nمثال: اشرح أنظمة الأعداد',
+        time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+      }]);
+      const [input, setInput] = useState('');
+      const [typing, setTyping] = useState(false);
+      const endRef = useRef(null);
+
+      useEffect(() => { if (toast) { const t = setTimeout(() => setToast(''), 3000); return () => clearTimeout(t); } }, [toast]);
+      useEffect(() => { localStorage.setItem('fav', JSON.stringify(favorites)); }, [favorites]);
+      useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chat, typing]);
+
+      const toggleFav = (code) => {
+        setFavorites(prev => prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]);
+        setToast(favorites.includes(code) ? 'تمت الإزالة من المفضلة' : 'تمت الإضافة للمفضلة');
+      };
+
+      const filtered = subjectsData.filter(s =>
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.arabicName.includes(searchQuery) ||
+        s.code.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
+      const getProgress = (code) => {
+        const lec = allLecturesData[code] || allLecturesData.default;
+        const ready = lec.filter(l => l.hasContent).length;
+        return { total: lec.length, ready, percent: Math.round((ready / lec.length) * 100) };
+      };
+
+      const today = getTodayArabic();
+      const todaySch = scheduleGroup1.find(d => d.day === today);
+
+      // Bot logic
+      const reply = (text) => {
+        setTyping(true);
+        const l = text.toLowerCase();
+        let r = '';
+        if (l.includes('أنظمة') || l.includes('number') || l.includes('binary') || l.includes('ثنائي'))
+          r = 'أنظمة الأعداد 🔢\n\nالثنائي (0 و 1) هو لغة الكمبيوتر.\nالعشري لينا، والـ Hex للاختصار.';
+        else if (l.includes('hardware') || l.includes('هاردوير') || l.includes('مكونات'))
+          r = 'Hardware 🖥️\n\nInput + CPU + Output + Memory\nRAM سريعة ومؤقتة، SSD دائم.';
+        else if (l.includes('software') || l.includes('برمج'))
+          r = 'Software 💻\n\nنظام تشغيل + تطبيقات + لغات برمجة';
+        else if (l.includes('شبكة') || l.includes('network'))
+          r = 'الشبكات 🌐\nLAN / WAN\nRouter + Switch + IP';
+        else if (l.includes('أمن') || l.includes('security'))
+          r = 'الأمن 🔒\nCIA Triad\nكلمات مرور قوية + 2FA';
+        else if (l.includes('مرحبا') || l.includes('اهلا') || l.includes('السلام'))
+          r = 'أهلاً بيك! 👋 اسألني عن أي موضوع.';
+        else
+          r = `تم استلام: "${text}"\n\nقولي اسم المحاضرة أو الموضوع بالظبط عشان أديك شرح أدق.`;
+        setTimeout(() => {
+          setChat(prev => [...prev, { id: Date.now(), sender: 'bot', text: r, time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) }]);
+          setTyping(false);
+        }, 800);
+      };
+
+      const send = (e) => {
+        e.preventDefault();
+        if (!input.trim() || typing) return;
+        const t = input.trim();
+        setInput('');
+        setChat(prev => [...prev, { id: Date.now(), sender: 'user', text: t, time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) }]);
+        reply(t);
+      };
+
+      const explain = (title) => {
+        setView('bot');
+        setTimeout(() => {
+          setChat(prev => [...prev, { id: Date.now(), sender: 'user', text: `أريد شرح: ${title}`, time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) }]);
+          reply(title);
+        }, 100);
+      };
+
+      // ===== Views =====
+      const Home = () => (
+        <div className="relative min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0f0000] via-[#050000] to-black" />
+          <div className="absolute top-1/2 left-1/2 w-[70vw] h-[70vw] max-w-[500px] max-h-[500px] rounded-full animate-pulse-glow pointer-events-none"
+            style={{ background: 'radial-gradient(circle, rgba(255,20,20,0.18) 0%, transparent 65%)', transform: 'translate(-50%,-50%)' }} />
+          <div className="z-10 text-center mb-10">
+            <h1 className="text-3xl md:text-5xl font-extrabold text-red-500 mb-3 glow-text">مرحباً بك في بوابتك الجامعية</h1>
+            <h2 className="text-xl md:text-3xl font-bold text-white/90">جامعة بني سويف الأهلية</h2>
+            <p className="mt-2 text-gray-400 text-sm">مكتبة محاضرات • مساعد ذكي • جدول دراسي</p>
+          </div>
+          <div className="z-10 flex flex-wrap justify-center gap-5 mb-10">
+            {[
+              { icon: BookOpen, label: 'مكتبة المحاضرات', v: 'subjects' },
+              { icon: Bot, label: 'المساعد الجامعي', v: 'bot' },
+              { icon: Calendar, label: 'جدول المحاضرات', v: 'groups' },
+            ].map(({ icon: I, label, v }) => (
+              <button key={v} onClick={() => setView(v)}
+                className="group flex flex-col items-center justify-center w-36 h-36 md:w-48 md:h-48 bg-black/50 border-2 border-red-900/60 rounded-2xl hover:border-red-500 hover:shadow-[0_0_30px_rgba(255,0,0,0.35)] hover:-translate-y-2 transition-all">
+                <I className="w-12 h-12 text-red-500 mb-3 group-hover:scale-110 transition-transform" />
+                <span className="text-white font-bold text-sm md:text-base">{label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="z-10 w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
+            <div className="bg-[#110000]/80 border border-red-900/40 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-3"><Clock className="w-5 h-5 text-red-500" /><h3 className="font-bold text-white">محاضرات اليوم ({today})</h3></div>
+              {todaySch ? todaySch.slots.slice(0, 3).map((s, i) => (
+                <div key={i} className="bg-[#1a0505] rounded-xl p-3 border border-red-900/20 mb-2">
+                  <div className="text-red-400 text-sm font-bold mb-1" dir="ltr">{s.time}</div>
+                  {s.items.map((it, j) => <div key={j} className="text-sm text-gray-300">{it.subject} — <span className="text-gray-500">{it.hall}</span></div>)}
+                </div>
+              )) : <p className="text-gray-500 text-sm">لا توجد محاضرات اليوم</p>}
+            </div>
+            <div className="bg-[#110000]/80 border border-red-900/40 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-3"><Star className="w-5 h-5 text-red-500" /><h3 className="font-bold text-white">المواد المفضلة</h3></div>
+              {favorites.length ? <div className="flex flex-wrap gap-2">{favorites.map(c => <span key={c} className="bg-red-950/50 text-red-300 text-sm px-3 py-1 rounded-full border border-red-900/40">{c}</span>)}</div>
+                : <p className="text-gray-500 text-sm">اضغط النجمة على أي مادة لإضافتها</p>}
+            </div>
+          </div>
+          <footer className="z-10 mt-8 text-gray-600 text-xs">جامعة بني سويف الأهلية • 2026</footer>
+        </div>
+      );
+
+      const Subjects = () => (
+        <div className="min-h-screen bg-[#050000] p-5 md:p-10">
+          <button onClick={() => setView('home')} className="flex items-center text-red-500 hover:text-red-400 mb-8 font-bold"><ChevronRight className="w-6 h-6 ml-2" /> العودة للرئيسية</button>
+          <div className="flex justify-center mb-10">
+            <div className="relative w-full max-w-md">
+              <input type="text" placeholder="ابحث عن مادة..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                className="w-full bg-[#0a0000] border border-red-900/50 text-white rounded-xl py-3 px-4 pr-12 focus:outline-none focus:border-red-500" />
+              <Search className="absolute right-4 top-3.5 w-5 h-5 text-red-500" />
+            </div>
+          </div>
+          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {filtered.map(sub => {
+              const p = getProgress(sub.code);
+              const isFav = favorites.includes(sub.code);
+              return (
+                <div key={sub.id} onClick={() => { setSelectedSubject(sub); setView('lectures'); }}
+                  className="bg-[#110000] border border-red-900/30 rounded-2xl p-5 cursor-pointer hover:border-red-500/50 transition-all relative group">
+                  <button onClick={e => { e.stopPropagation(); toggleFav(sub.code); }} className="absolute top-4 left-4 p-1.5 rounded-full hover:bg-red-900/40">
+                    <Star className={`w-5 h-5 ${isFav ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600'}`} />
+                  </button>
+                  <div className="w-14 h-14 bg-red-950/50 rounded-full flex items-center justify-center mb-4 text-red-500 mx-auto"><BookOpen className="w-7 h-7" /></div>
+                  <h3 className="text-lg font-bold text-white text-center mb-1">{sub.arabicName}</h3>
+                  <p className="text-sm text-gray-400 text-center mb-3">{sub.name}</p>
+                  <div className="flex justify-center mb-3"><span className="text-xs text-red-400 bg-red-950/40 px-3 py-1 rounded-full">{sub.code}</span></div>
+                  <div className="mt-auto">
+                    <div className="flex justify-between text-xs text-gray-500 mb-1"><span>{p.ready}/{p.total}</span><span>{p.percent}%</span></div>
+                    <div className="h-1.5 bg-[#1a0505] rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-l from-red-600 to-red-400 rounded-full" style={{ width: `${p.percent}%` }} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+
+      const Lectures = () => {
+        const lectures = allLecturesData[selectedSubject?.code] || allLecturesData.default;
+        return (
+          <div className="min-h-screen bg-[#050000] p-5 md:p-10">
+            <button onClick={() => setView('subjects')} className="flex items-center text-red-500 hover:text-red-400 mb-8 font-bold"><ChevronRight className="w-6 h-6 ml-2" /> العودة للمواد</button>
+            <h2 className="text-2xl font-bold text-white mb-2 border-b border-red-900/50 pb-4">
+              محاضرات: <span className="text-red-500">{selectedSubject?.arabicName}</span>
+            </h2>
+            <p className="text-gray-500 text-sm mb-8">{selectedSubject?.code}</p>
+            <div className="max-w-5xl mx-auto flex flex-col gap-4">
+              {lectures.map(lec => (
+                <div key={lec.id} className="bg-[#110000] border border-red-900/30 rounded-xl p-5 flex flex-col md:flex-row justify-between gap-4">
+                  <div className="flex-1">
+                    <h4 className="font-bold text-white mb-2">{lec.title}</h4>
+                    <div className="text-sm text-gray-400 flex flex-wrap gap-3">
+                      <span>المحاضر: {lec.doctor}</span>
+                      {lec.duration && <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{lec.duration}</span>}
+                    </div>
+                    {!lec.hasContent && <span className="inline-block mt-2 bg-red-900/40 text-red-400 text-xs px-2 py-1 rounded">قريبًا</span>}
+                  </div>
+                  {lec.hasContent ? (
+                    <div className="flex flex-wrap gap-2">
+                      <button onClick={() => setPreview({ open: true, title: lec.title, content: lec.summaryAr, lang: 'ar', lecture: lec })}
+                        className="flex items-center gap-1.5 border border-blue-600/50 text-blue-400 hover:bg-blue-600/10 px-3 py-2 rounded-lg text-sm font-bold"><Eye className="w-4 h-4" /> عربي</button>
+                      <button onClick={() => setPreview({ open: true, title: lec.title, content: lec.summaryEn, lang: 'en', lecture: lec })}
+                        className="flex items-center gap-1.5 border border-yellow-600/50 text-yellow-500 hover:bg-yellow-600/10 px-3 py-2 rounded-lg text-sm font-bold"><Eye className="w-4 h-4" /> English</button>
+                      <button onClick={() => explain(lec.title)}
+                        className="flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-bold"><Bot className="w-4 h-4" /> اشرح لي</button>
+                    </div>
+                  ) : (
+                    <button disabled className="bg-[#1a0505] text-gray-500 px-5 py-3 rounded-lg border border-gray-800 text-sm font-bold cursor-not-allowed">المحتوى مغلق</button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {preview.open && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                <div className="bg-[#0a0000] border-2 border-red-900 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+                  <div className="p-4 border-b border-red-900/50 flex justify-between items-center bg-[#110000] rounded-t-xl">
+                    <h3 className="text-lg font-bold text-red-500 flex items-center gap-2"><BookOpen className="w-5 h-5" />{preview.title}</h3>
+                    <button onClick={() => setPreview({ ...preview, open: false })} className="text-gray-400 hover:text-white p-2"><X className="w-5 h-5" /></button>
+                  </div>
+                  <div className="p-6 overflow-y-auto flex-1 text-gray-200 whitespace-pre-wrap leading-relaxed" dir={preview.lang === 'ar' ? 'rtl' : 'ltr'}>{preview.content}</div>
+                  <div className="p-4 border-t border-red-900/50 bg-[#110000] rounded-b-xl flex gap-3 justify-end">
+                    <button onClick={() => { setPreview({ ...preview, open: false }); explain(preview.title); }}
+                      className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-bold"><Bot className="w-4 h-4" /> اطلب شرح</button>
+                    <button onClick={() => setToast('تم تحميل الملخص!')}
+                      className="flex items-center gap-2 border border-green-600/50 text-green-500 hover:bg-green-600/10 px-4 py-2 rounded-lg text-sm font-bold"><Download className="w-4 h-4" /> تحميل</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      const BotView = () => (
+        <div className="min-h-screen bg-[#050000] p-4 md:p-8 flex flex-col">
+          <button onClick={() => setView('home')} className="flex items-center text-red-500 hover:text-red-400 mb-4 font-bold w-fit"><ChevronRight className="w-6 h-6 ml-2" /> العودة للرئيسية</button>
+          <div className="flex-1 max-w-4xl mx-auto w-full bg-[#110000] border border-red-900/40 rounded-2xl flex flex-col overflow-hidden">
+            <div className="bg-[#1a0505] p-4 flex items-center gap-3 border-b border-red-900/50">
+              <div className="w-10 h-10 bg-red-900/40 rounded-full flex items-center justify-center"><Bot className="w-6 h-6 text-red-500" /></div>
+              <div>
+                <h3 className="font-bold text-white">المساعد الجامعي الذكي</h3>
+                <p className="text-xs text-green-500 flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> متصل الآن</p>
+              </div>
+            </div>
+            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 min-h-[400px] max-h-[60vh]">
+              {chat.map(m => (
+                <div key={m.id} className={`flex message-enter ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] rounded-2xl p-4 ${m.sender === 'user' ? 'bg-red-900 text-white rounded-tl-none' : 'bg-[#1f0505] border border-red-900/30 text-gray-200 rounded-tr-none'}`}>
+                    <div className="flex items-center gap-2 mb-2 opacity-70 text-xs">{m.sender === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />} {m.sender === 'user' ? 'أنت' : 'المساعد'}</div>
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{m.text}</p>
+                    <span className="text-[10px] opacity-50 block mt-2" dir="ltr">{m.time}</span>
+                  </div>
+                </div>
+              ))}
+              {typing && (
+                <div className="flex justify-start">
+                  <div className="bg-[#1f0505] border border-red-900/30 rounded-2xl px-5 py-3 flex gap-1.5">
+                    <span className="w-2 h-2 bg-red-500 rounded-full" style={{ animation: 'bounce 1s infinite' }} />
+                    <span className="w-2 h-2 bg-red-500 rounded-full" style={{ animation: 'bounce 1s infinite 0.15s' }} />
+                    <span className="w-2 h-2 bg-red-500 rounded-full" style={{ animation: 'bounce 1s infinite 0.3s' }} />
+                  </div>
+                </div>
+              )}
+              <div ref={endRef} />
+            </div>
+            <form onSubmit={send} className="p-4 bg-[#1a0505] border-t border-red-900/50 flex gap-2">
+              <input value={input} onChange={e => setInput(e.target.value)} placeholder="اكتب سؤالك..." disabled={typing}
+                className="flex-1 bg-[#0a0000] border border-red-900/50 text-white rounded-xl py-3 px-4 focus:outline-none focus:border-red-500" />
+              <button type="submit" disabled={!input.trim() || typing}
+                className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white w-12 h-12 rounded-xl flex items-center justify-center">
+                <Send className="w-5 h-5" style={{ transform: 'scaleX(-1)' }} />
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+
+      const Groups = () => (
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[#050000]">
+          <button onClick={() => setView('home')} className="absolute top-6 right-6 flex items-center text-red-500 hover:text-red-400 font-bold"><ChevronRight className="w-6 h-6 ml-2" /> العودة</button>
+          <h2 className="text-3xl font-bold text-white mb-10 glow-text">اختر الجروب الخاص بك</h2>
+          <div className="flex flex-wrap justify-center gap-8">
+            {['جروب 1', 'جروب 2'].map(g => (
+              <button key={g} onClick={() => { setSelectedGroup(g); setView('schedule'); }}
+                className="group flex flex-col items-center justify-center w-44 h-44 md:w-56 md:h-56 bg-[#110000] border-2 border-red-900/60 rounded-2xl hover:border-red-500 hover:shadow-[0_0_30px_rgba(255,0,0,0.3)] hover:-translate-y-2 transition-all">
+                <Users className="w-16 h-16 text-red-500 mb-4 group-hover:scale-110 transition-transform" />
+                <span className="text-white text-xl font-bold">{g}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+
+      const Schedule = () => {
+        const data = selectedGroup === 'جروب 1' ? scheduleGroup1 : scheduleGroup2;
+        return (
+          <div className="min-h-screen bg-[#0a0000] p-5 md:p-10">
+            <button onClick={() => setView('groups')} className="flex items-center text-red-500 hover:text-red-400 mb-8 font-bold"><ChevronRight className="w-6 h-6 ml-2" /> العودة للجروبات</button>
+            <h2 className="text-2xl font-bold text-white mb-8 flex items-center border-b border-red-900/50 pb-4">
+              <Calendar className="w-7 h-7 ml-3 text-red-500" /> الجدول — {selectedGroup}
+            </h2>
+            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5">
+              {data.map((day, i) => (
+                <div key={i} className={`bg-[#110000] border rounded-2xl p-5 ${day.day === today ? 'border-red-500 shadow-[0_0_25px_rgba(220,38,38,0.15)]' : 'border-red-900/40'}`}>
+                  <h3 className="text-xl font-bold text-red-500 mb-5 pb-2 border-b border-red-900/30 flex justify-between">
+                    {day.day}
+                    {day.day === today && <span className="text-xs bg-red-600 text-white px-2 py-0.5 rounded-full">اليوم</span>}
+                  </h3>
+                  {day.slots.map((slot, si) => (
+                    <div key={si} className="bg-[#1a0505] p-4 rounded-xl border border-red-900/20 mb-3">
+                      <div className="flex items-center text-red-400 font-bold mb-2"><Clock className="w-4 h-4 ml-2" /><span dir="ltr">{slot.time}</span></div>
+                      {slot.items.map((it, ii) => (
+                        <div key={ii} className="bg-[#2a0505]/50 p-3 rounded-lg border border-red-900/10 mb-2">
+                          <span className="font-bold text-white text-sm">{it.subject}</span>
+                          <div className="text-xs text-gray-400 flex items-center gap-1 mt-1"><User className="w-3 h-3 text-red-500/80" />{it.doctor}</div>
+                          <div className="text-xs text-gray-400 flex items-center gap-1"><MapPin className="w-3 h-3 text-red-500/80" />{it.hall}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      };
+
+      return (
+        <div dir="rtl" className="font-cairo min-h-screen bg-[#050000] text-gray-200">
+          {view === 'home' && <Home />}
+          {view === 'subjects' && <Subjects />}
+          {view === 'lectures' && <Lectures />}
+          {view === 'bot' && <BotView />}
+          {view === 'groups' && <Groups />}
+          {view === 'schedule' && <Schedule />}
+          {toast && (
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg font-bold flex items-center gap-2">
+              <CheckCircle className="w-5 h-5" /> {toast}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
